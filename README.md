@@ -1,3 +1,8 @@
+> See [README_ENG](./README_ENG.md) for more information
+>
+> Обратитесь к [README_RU](./README_RU.md) для получения дополнительной информации
+
+---
 # mdl-importer/exporter
 Warcraft MDL exporter for Blender
 By Kalle Halvarsson

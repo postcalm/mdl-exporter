@@ -32,11 +32,12 @@ class WAR3_OT_export_mdl(Operator, ExportHelper):
 
     texture_path: StringProperty(
         name="Texture Path",
+        default="textures"
     )
 
     texture_extension: StringProperty(
         name="Texture Extension",
-        default="tga"
+        default="blp"
     )
 
     use_selection: BoolProperty(
