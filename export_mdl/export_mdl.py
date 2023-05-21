@@ -3,9 +3,13 @@ import getpass
 import datetime
 import os
 
-from .classes.War3Model import War3Model
-    
-from .utils import *
+# for tests
+try:
+    from export_mdl.classes.War3Model import War3Model
+    from export_mdl.utils import *
+except (NameError, ImportError):
+    from .classes.War3Model import War3Model
+    from .utils import *
 
 import bpy
 
@@ -55,17 +59,19 @@ def write_billboard(writer, billboarded, billboard_lock):
             writer.write("BillboardedLock%s" % axis)
     if billboarded:
         writer.write("Billboarded")
-    
+
+
 def save(operator, context, settings, filepath="", mdl_version=800):
-        
     scene = context.scene
 
     current_frame = scene.frame_current
     scene.frame_set(0)
 
     model = War3Model(context)
+    fake_operator = type("Op", (), {"report": lambda _: print(*_)})
+    operator = operator or fake_operator
     model.from_scene(context, settings, operator.report)
-    
+
     scene.frame_set(current_frame)
 
     writer = MDLWriter(filepath)
@@ -140,10 +146,12 @@ def save(operator, context, settings, filepath="", mdl_version=800):
         print(textures)
         for texture in textures:
             name = texture.name.split('.')[0]
+            name = name.split("_")
+            name = "_".join(list(filter(lambda s: not s.isdecimal(), name)))
             if name not in tmp_textures:
                 writer.begin_scope("Bitmap")
-                tmp_textures.append(name)
                 texture_path = os.path.normpath(settings.texture_path)
+                tmp_textures.append(name)
                 texture_path = f"{texture_path}\\{name}"
                 extension = settings.texture_extension
                 writer.write(f'Image "{texture_path}.{extension}"')
@@ -184,18 +192,20 @@ def save(operator, context, settings, filepath="", mdl_version=800):
                     writer.write("NoDepthSet")
 
                 if layer.texture_id is not None:
-                    texture_id = tmp_textures.index(material.name.split('.')[0])
+                    m_name = material.name.split('.')[0]
+                    m_name = "_".join(list(filter(lambda s: not s.isdecimal(), m_name.split("_"))))
+                    texture_id = tmp_textures.index(m_name)
                     writer.write(f"static TextureID {texture_id}")
                 else:
                     writer.write("static TextureID 9999")
-                    
+
                 if layer.texture_anim is not None:
                     writer.write(f"TVertexAnimId {model.tvertex_anims.index(layer.texture_anim)}")
                 if layer.alpha_anim is not None:
                     layer.alpha_anim.write_mdl("Alpha", writer, model)
                 else:
                     writer.write(f"static Alpha {f2s(layer.alpha_value)}")
-                    
+
                 writer.end_scope()
             writer.end_scope()
         writer.end_scope()
@@ -267,7 +277,7 @@ def save(operator, context, settings, filepath="", mdl_version=800):
             for sequence in model.sequences:
                 writer.begin_scope("Anim")
 
-                # As of right now, we just use the geoset bounds. 
+                # As of right now, we just use the geoset bounds.
                 writer.write("MinimumExtent {%s, %s, %s}" % tuple(map(f2s, geoset.min_extent)))
                 writer.write("MaximumExtent {%s, %s, %s}" % tuple(map(f2s, geoset.max_extent)))
                 writer.write("BoundsRadius %s" % f2s(calc_bounds_radius(geoset.min_extent, geoset.max_extent)))
@@ -545,7 +555,7 @@ def save(operator, context, settings, filepath="", mdl_version=800):
         else:
             writer.write("static EmissionRate %s" % f2s(rnd(psys.emission_rate)))
 
-        # FIXME FIXME FIXME FIXME FIXME: Separate X and Y channels! New animation class won't handle this. 
+        # FIXME FIXME FIXME FIXME FIXME: Separate X and Y channels! New animation class won't handle this.
         if psys.scale_anim is not None and ('scale', 1) in psys.scale_anim.keys():
             psys.scale_anim.write_mdl("Width", writer, model)
         else:
@@ -623,7 +633,7 @@ def save(operator, context, settings, filepath="", mdl_version=800):
                 break
         writer.end_scope()
 
-    # CAMERAS    
+    # CAMERAS
     for camera in model.cameras:
         writer.begin_scope("Camera", "\"%s\"" % camera.name)
         writer.write("Position {%s, %s, %s}" % tuple(map(f2s, camera.pivot)))
@@ -670,6 +680,11 @@ def save(operator, context, settings, filepath="", mdl_version=800):
 
 # ONLY TESTS
 if __name__ == '__main__':
+    from export_mdl.classes.War3ExportSettings import War3ExportSettings
+    from bpy_extras.io_utils import axis_conversion
+    from mathutils import Matrix
+    from bpy import context as bpy_context
+
     settings = War3ExportSettings()
     settings.global_matrix = axis_conversion(
         to_forward="-X",
@@ -680,7 +695,8 @@ if __name__ == '__main__':
     settings.optimize_animation = False
     settings.optimize_tolerance = 0.05
     save(
-        bpy_context, 
-        settings, 
+        None,
+        bpy_context,
+        settings,
         "E:\\Work\\foyer_01.mdl"
     )
