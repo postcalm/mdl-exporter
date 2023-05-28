@@ -138,16 +138,17 @@ def save(operator, context, settings, filepath="", mdl_version=800):
     # TEXTURES
     tmp_textures = []
     textures = []
+    objects = []
     for m in list(model.object_indices.keys()):
         obj = bpy.data.objects[m]
-        textures.extend(obj.material_slots)
+        objects.extend(obj.material_slots)
+    for o in objects:
+        t = o.material.node_tree.nodes.get("Texture")
+        textures.append(t.image)
     if len(textures):
         writer.begin_scope("Textures", f"{len(textures)}")
-        print(textures)
         for texture in textures:
             name = texture.name.split('.')[0]
-            name = name.split("_")
-            name = "_".join(list(filter(lambda s: not s.isdecimal(), name)))
             if name not in tmp_textures:
                 writer.begin_scope("Bitmap")
                 texture_path = os.path.normpath(settings.texture_path)
@@ -172,6 +173,7 @@ def save(operator, context, settings, filepath="", mdl_version=800):
 
             if material.priority_plane != 0:
                 writer.write(f"PriorityPlane {material.priority_plane}")
+
             for layer in material.layers:
                 writer.begin_scope("Layer")
                 writer.write(f"FilterMode {layer.filter_mode}")
@@ -192,9 +194,10 @@ def save(operator, context, settings, filepath="", mdl_version=800):
                     writer.write("NoDepthSet")
 
                 if layer.texture_id is not None:
-                    m_name = material.name.split('.')[0]
-                    m_name = "_".join(list(filter(lambda s: not s.isdecimal(), m_name.split("_"))))
-                    texture_id = tmp_textures.index(m_name)
+                    m_, = list(filter(lambda o: o.name == material.name, objects))
+                    m_ = m_.material.node_tree.nodes.get("Texture").image
+                    m_ = m_.name.split('.')[0]
+                    texture_id = tmp_textures.index(m_)
                     writer.write(f"static TextureID {texture_id}")
                 else:
                     writer.write("static TextureID 9999")
