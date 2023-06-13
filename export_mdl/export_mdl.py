@@ -143,7 +143,10 @@ def save(operator, context, settings, filepath="", mdl_version=800):
         obj = bpy.data.objects[m]
         objects.extend(obj.material_slots)
     for o in objects:
-        t = o.material.node_tree.nodes.get("Texture")
+        nodes = o.material.node_tree.nodes
+        t = nodes.get("Texture")
+        if t is None:
+            t = nodes.get("DiffuseTexture1")
         textures.append(t.image)
     if len(textures):
         writer.begin_scope("Textures", f"{len(textures)}")
@@ -194,9 +197,12 @@ def save(operator, context, settings, filepath="", mdl_version=800):
                     writer.write("NoDepthSet")
 
                 if layer.texture_id is not None:
-                    m_, = list(filter(lambda o: o.name == material.name, objects))
-                    m_ = m_.material.node_tree.nodes.get("Texture").image
-                    m_ = m_.name.split('.')[0]
+                    m_, *_ = list(filter(lambda o: o.name == material.name, objects))
+                    nodes = m_.material.node_tree.nodes
+                    m_ = nodes.get("Texture")
+                    if m_ is None:
+                        m_ = nodes.get("DiffuseTexture1")
+                    m_ = m_.image.name.split('.')[0]
                     texture_id = tmp_textures.index(m_)
                     writer.write(f"static TextureID {texture_id}")
                 else:
@@ -697,9 +703,11 @@ if __name__ == '__main__':
     settings.use_selection = True
     settings.optimize_animation = False
     settings.optimize_tolerance = 0.05
+    settings.texture_path = "textures"
+    settings.texture_extension = "blp"
     save(
         None,
         bpy_context,
         settings,
-        "E:\\Work\\foyer_01.mdl"
+        "E:\\Work\\foyer_02.mdl"
     )
