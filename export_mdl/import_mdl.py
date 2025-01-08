@@ -17,20 +17,22 @@ from .classes.War3GeosetAnim import War3GeosetAnim
 
 import os.path
 
-def parse_vector(str, as_int = False):
-    values = str.rstrip('},').lstrip('{').split(',')
+
+def parse_vector(str, as_int=False):
+    values = str.rstrip("},").lstrip("{").split(",")
     return tuple(map(lambda x: int(x) if as_int else float(x), values))
+
 
 class MDLParser:
     def __init__(self, path):
-         self.file = open(path, 'r')
-         self.scope = 0
+        self.file = open(path)
+        self.scope = 0
 
     def __del__(self):
         self.file.close()
 
     def readline(self):
-        line = self.file.readline().strip().rstrip(',')
+        line = self.file.readline().strip().rstrip(",")
         if line.endswith("{"):
             self.scope += 1
         elif line.startswith("}"):
@@ -47,52 +49,52 @@ class MDLParser:
         base_scope = self.scope
 
         while self.scope >= base_scope:
-            token, *values = self.readline().split(' ')
-            if token == 'Vertices':
+            token, *values = self.readline().split(" ")
+            if token == "Vertices":
                 count = int(values[0])
                 print("Parsing %d vertices" % count)
                 for i in range(count):
                     vertex = parse_vector(self.readline())
                     geoset.vertices.append((vertex, (0, 1, 0), (0, 0), 0))
-            elif token == 'Normals':
+            elif token == "Normals":
                 count = int(values[0])
                 print("Parsing %d normals" % count)
                 for i in range(count):
                     vertex = list(geoset.vertices[i])
                     vertex[1] = parse_vector(self.readline())
                     geoset.vertices[i] = tuple(vertex)
-            elif token == 'TVertices':
+            elif token == "TVertices":
                 count = int(values[0])
-                print("Parsing %d UVs" %count)
+                print("Parsing %d UVs" % count)
                 for i in range(count):
                     vertex = list(geoset.vertices[i])
                     vertex[2] = parse_vector(self.readline())
                     geoset.vertices[i] = tuple(vertex)
-            elif token == 'VertexGroup':
+            elif token == "VertexGroup":
                 line = self.readline().strip()
                 i = 0
-                print ("Parsing vertex groups")
-                while line != '}':
+                print("Parsing vertex groups")
+                while line != "}":
                     vertex = list(geoset.vertices[i])
                     vertex[3] = int(line)
                     geoset.vertices[i] = tuple(vertex)
                     i += 1
                     line = self.readline().strip()
-            elif token == 'Faces':
+            elif token == "Faces":
                 print("Parsing triangles")
                 geoset.triangles = []
-                tri_count = int(values[0].split(' ')[0])
-                self.readline() # One line is for the Triangles block - ignore this
+                tri_count = int(values[0].split(" ")[0])
+                self.readline()  # One line is for the Triangles block - ignore this
                 for i in range(tri_count):
                     # Triangle indices are stored in a giant vector
                     geoset.triangles += list(parse_vector(self.readline(), True))
-            elif token == 'Groups':
+            elif token == "Groups":
                 count = int(values[0])
                 for i in range(count):
-                    group = self.readline().split(' ', 1)
+                    group = self.readline().split(" ", 1)
                     if group[0].strip() == "Matrices":
                         geoset.matrices.append(parse_vector(group[1], True))
-            elif token == 'MaterialID':
+            elif token == "MaterialID":
                 geoset.material_id = int(values[0])
 
         self.model.geosets.append(geoset)
@@ -103,18 +105,18 @@ class MDLParser:
         geoset_anim = War3GeosetAnim((1, 1, 1), None, None)
 
         while self.scope >= base_scope:
-            token, *values = self.readline().split(' ', 1)
+            token, *values = self.readline().split(" ", 1)
 
             if token == "GeosetId":
                 geoset_anim.geoset_id = int(values[0])
             elif token == "Alpha":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 geoset_anim.alpha_anim = self.parse_animation(token, frame_count)
             elif token == "Color":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 geoset_anim.color_anim = self.parse_animation(token, frame_count)
             elif token == "static":
-                token, *values = values[0].split(' ', 1)
+                token, *values = values[0].split(" ", 1)
                 if token == "Alpha":
                     geoset_anim.alpha = float(values[0])
                 elif token == "Color":
@@ -130,25 +132,25 @@ class MDLParser:
         has_tangents = False
         if type != "EventTrack":
             curve.interpolation = self.readline()
-            has_tangents = curve.interpolation in {'Bezier', 'Hermite'}
+            has_tangents = curve.interpolation in {"Bezier", "Hermite"}
 
         line = self.readline()
         if "GlobalSeqId" in line:
-            curve.global_sequence = int(line.split(' ')[1])
+            curve.global_sequence = int(line.split(" ")[1])
             line = self.readline()
 
         for i in range(num_frames):
-            token, *values = line.split(' ', 1)
-            frame = int(token.rstrip(':'))
+            token, *values = line.split(" ", 1)
+            frame = int(token.rstrip(":"))
 
-            if type != 'EventTrack':
+            if type != "EventTrack":
                 value = None
-                if type in {'Visibility'}:
+                if type in {"Visibility"}:
                     value = parse_vector(values[0], True)
                 else:
                     value = parse_vector(values[0])
 
-                if type == 'Rotation':
+                if type == "Rotation":
                     # Blender quaternions have the form WXYZ, while MDL has XYZW
                     value = (value[3], value[0], value[1], value[2])
 
@@ -157,10 +159,10 @@ class MDLParser:
                 curve.keyframes[frame] = (1,)
 
             if has_tangents:
-                in_tan = parse_vector(self.readline().split(' ', 1)[1])
-                out_tan = parse_vector(self.readline().split(' ', 1)[1])
+                in_tan = parse_vector(self.readline().split(" ", 1)[1])
+                out_tan = parse_vector(self.readline().split(" ", 1)[1])
 
-                if type == 'Rotation':
+                if type == "Rotation":
                     in_tan = (in_tan[3], in_tan[0], in_tan[1], in_tan[2])
                     out_tan = (out_tan[3], out_tan[0], out_tan[1], out_tan[2])
 
@@ -172,40 +174,40 @@ class MDLParser:
         return curve
 
     def parse_node(self, node, token, values):
-        if token == 'ObjectId':
+        if token == "ObjectId":
             node.object_id = int(values[0])
             return True
-        elif token == 'Parent':
+        elif token == "Parent":
             node.parent_id = int(values[0])
             return True
-        elif token.startswith('BillboardedLock'):
+        elif token.startswith("BillboardedLock"):
             axis = token[-1]
             billboarded = list(node.billboard_lock)
-            if axis == 'X':
+            if axis == "X":
                 billboarded[0] = True
-            elif axis == 'Y':
+            elif axis == "Y":
                 billboarded[1] = True
-            elif axis == 'Z':
+            elif axis == "Z":
                 billboarded[2] = True
             node.billboard_lock = tuple(billboarded)
             return True
-        elif token == 'Billboarded':
+        elif token == "Billboarded":
             node.billboarded = True
             return True
         elif token == "Visibility":
-            frame_count = int(values[0].split(' ')[0])
+            frame_count = int(values[0].split(" ")[0])
             node.visibility = self.parse_animation(token, frame_count)
             return True
         elif token == "Scale":
-            frame_count = int(values[0].split(' ')[0])
+            frame_count = int(values[0].split(" ")[0])
             node.anim_scale = self.parse_animation(token, frame_count)
             return True
         elif token == "Rotation":
-            frame_count = int(values[0].split(' ')[0])
+            frame_count = int(values[0].split(" ")[0])
             node.anim_rot = self.parse_animation(token, frame_count)
             return True
         elif token == "Translation":
-            frame_count = int(values[0].split(' ')[0])
+            frame_count = int(values[0].split(" ")[0])
             node.anim_loc = self.parse_animation(token, frame_count)
             return True
 
@@ -218,7 +220,7 @@ class MDLParser:
         base_scope = self.scope
 
         while self.scope >= base_scope:
-            token, *values = self.readline().split(' ', 1)
+            token, *values = self.readline().split(" ", 1)
             if self.parse_node(bone, token, values):
                 pass
             elif token == "GeosetId":
@@ -237,31 +239,31 @@ class MDLParser:
         base_scope = self.scope
 
         while self.scope >= base_scope:
-            token, *values = self.readline().split(' ', 1)
+            token, *values = self.readline().split(" ", 1)
             if self.parse_node(light, token, values):
                 pass
             elif token in {"Omnidirectional", "Directional", "Ambient"}:
                 light.type = token
             elif token == "Intensity":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 light.intensity_anim = self.parse_animation(token, frame_count)
             elif token == "AmbIntensity":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 light.amb_intensity_anim = self.parse_animation(token, frame_count)
             elif token == "AttenuationStart":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 light.atten_start_anim = self.parse_animation(token, frame_count)
             elif token == "AttenuationEnd":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 light.atten_end_anim = self.parse_animation(token, frame_count)
             elif token == "Color":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 light.color_anim = self.parse_animation(token, frame_count)
             elif token == "AmbColor":
-                frame_count = int(values[0].split(' ')[0])
-                light.amb_color_anim = self.parse_animation('Color', frame_count)
+                frame_count = int(values[0].split(" ")[0])
+                light.amb_color_anim = self.parse_animation("Color", frame_count)
             elif token == "static":
-                token, *values = values[0].split(' ', 1)
+                token, *values = values[0].split(" ", 1)
                 if token == "AttenuationStart":
                     light.atten_start = float(values[0])
                 elif token == "AttenuationEnd":
@@ -273,8 +275,7 @@ class MDLParser:
                 elif token == "AmbColor":
                     light.amb_color = parse_vector(values[0])
 
-        self.model.objects['light'].add(light)
-
+        self.model.objects["light"].add(light)
 
     def parse_helper(self, name):
         print("Parsing helper %s" % name)
@@ -283,7 +284,7 @@ class MDLParser:
         base_scope = self.scope
 
         while self.scope >= base_scope:
-            token, *values = self.readline().split(' ', 1)
+            token, *values = self.readline().split(" ", 1)
             if self.parse_node(helper, token, values):
                 pass
 
@@ -296,7 +297,7 @@ class MDLParser:
         base_scope = self.scope
 
         while self.scope >= base_scope:
-            token, *values = self.readline().split(' ', 1)
+            token, *values = self.readline().split(" ", 1)
             if self.parse_node(attachment, token, values):
                 pass
             elif token == "AttachmentId":
@@ -312,11 +313,11 @@ class MDLParser:
         base_scope = self.scope
 
         while self.scope >= base_scope:
-            token, *values = self.readline().split(' ', 1)
+            token, *values = self.readline().split(" ", 1)
             if self.parse_node(event, token, values):
                 pass
             elif token == "EventTrack":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 event.track = self.parse_animation(token, frame_count)
 
         self.model.objects["eventobject"].add(event)
@@ -332,7 +333,7 @@ class MDLParser:
         base_scope = self.scope
 
         while self.scope >= base_scope:
-            token, *values = line.split(' ', 1)
+            token, *values = line.split(" ", 1)
             if self.parse_node(emitter, token, values):
                 pass
             elif token == "SortPrimsFarZ":
@@ -365,9 +366,9 @@ class MDLParser:
             elif token == "Time":
                 emitter.time = float(values[0])
             elif token == "SegmentColor":
-                emitter.start_color = parse_vector(self.readline().split(' ', 1)[1])
-                emitter.mid_color = parse_vector(self.readline().split(' ', 1)[1])
-                emitter.end_color = parse_vector(self.readline().split(' ', 1)[1])
+                emitter.start_color = parse_vector(self.readline().split(" ", 1)[1])
+                emitter.mid_color = parse_vector(self.readline().split(" ", 1)[1])
+                emitter.end_color = parse_vector(self.readline().split(" ", 1)[1])
             elif token == "Alpha":
                 alpha = parse_vector(values[0], True)
                 emitter.start_alpha = alpha[0]
@@ -405,28 +406,28 @@ class MDLParser:
             elif token == "PriorityPlane":
                 emitter.priority_plane = int(values[0])
             elif token == "Speed":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 emitter.speed_anim = self.parse_animation(token, frame_count)
             elif token == "Variation":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 emitter.variation_anim = self.parse_animation(token, frame_count)
             elif token == "EmissionRate":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 emitter.emission_rate_anim = self.parse_animation(token, frame_count)
             elif token == "Width":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 emitter.width_anim = self.parse_animation(token, frame_count)
             elif token == "Height":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 emitter.height_anim = self.parse_animation(token, frame_count)
             elif token == "Gravity":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 emitter.gravity_anim = self.parse_animation(token, frame_count)
             elif token == "Latitude":
-                frame_count = int(values[0].split(' ')[0])
+                frame_count = int(values[0].split(" ")[0])
                 emitter.latitude_anim = self.parse_animation(token, frame_count)
             elif token == "static":
-                token, *values = values[0].split(' ', 1)
+                token, *values = values[0].split(" ", 1)
                 if token == "Speed":
                     emitter.speed = float(values[0])
                 elif token == "Variation":
@@ -444,7 +445,7 @@ class MDLParser:
 
             line = self.readline()
 
-        self.model.objects['particle2'].add(emitter)
+        self.model.objects["particle2"].add(emitter)
 
     def parse_ribbon_emitter(self, name):
         pass
@@ -456,20 +457,20 @@ class MDLParser:
         base_scope = self.scope
 
         while self.scope >= base_scope:
-            token, *values = self.readline().split(' ', 1)
+            token, *values = self.readline().split(" ", 1)
             if self.parse_node(shape, token, values):
                 pass
-            elif token in {'Box', 'Sphere'}:
+            elif token in {"Box", "Sphere"}:
                 shape.type = token
             elif token == "BoundsRadius":
                 shape.radius = float(values[0])
             elif token == "Vertices":
-                count = int(values[0].split(' ')[0])
+                count = int(values[0].split(" ")[0])
                 shape.vertices = []
                 for i in range(count):
                     shape.vertices.append(parse_vector(self.readline()))
 
-        self.model.objects['collisionshape'].add(shape)
+        self.model.objects["collisionshape"].add(shape)
 
     def parse_camera(self, name):
         print("Parsing camera %s" % name)
@@ -478,7 +479,7 @@ class MDLParser:
         base_scope = self.scope
 
         while self.scope >= base_scope:
-            token, *values = self.readline().split(' ', 1)
+            token, *values = self.readline().split(" ", 1)
             if self.parse_node(camera, token, values):
                 pass
             elif token == "FieldOfView":
@@ -490,11 +491,11 @@ class MDLParser:
             elif token == "Target":
                 child_scope = self.scope
                 while self.scope >= child_scope:
-                    token, *values = self.readline().split(' ', 1)
+                    token, *values = self.readline().split(" ", 1)
                     if token == "Position":
                         camera.target = parse_vector(values[0])
 
-        self.model.objects['camera'].add(camera)
+        self.model.objects["camera"].add(camera)
 
     def parse_pivot_poins(self, count):
         print("Parsing %d materials" % count)
@@ -507,21 +508,19 @@ class MDLParser:
         print("Parsing %d textures" % count)
 
         for i in range(count):
-            self.readline() # Enter scope of first bitmap
+            self.readline()  # Enter scope of first bitmap
             texture = War3Texture(None)
             child_scope = self.scope
             while self.scope >= child_scope:
-                token, *values = self.readline().split(' ', 1)
-                if token == 'Image':
+                token, *values = self.readline().split(" ", 1)
+                if token == "Image":
                     texture.image_path = values[0].strip('"')
-                elif token == 'ReplaceableId':
+                elif token == "ReplaceableId":
                     texture.image_path = None
                     texture.is_replaceable = True
                     texture.replaceable_id = int(values[0])
 
             self.model.textures.append(texture)
-
-        
 
     def parse_material_layer(self, material):
         base_scope = self.scope
@@ -529,36 +528,35 @@ class MDLParser:
         layer = War3MaterialLayer()
 
         while self.scope >= base_scope:
-            token, *values = self.readline().split(' ', 1)
-            if token == 'FilterMode':
+            token, *values = self.readline().split(" ", 1)
+            if token == "FilterMode":
                 layer.filter_mode = values[0]
-            elif token == 'Unshaded':
+            elif token == "Unshaded":
                 layer.unshaded = True
-            elif token == 'TwoSided':
+            elif token == "TwoSided":
                 layer.two_sided = True
-            elif token == 'Unfogged':
+            elif token == "Unfogged":
                 layer.unfogged = True
-            elif token == 'NoDepthTest':
+            elif token == "NoDepthTest":
                 layer.no_depth_test = True
-            elif token == 'NoDepthSet':
+            elif token == "NoDepthSet":
                 layer.no_depth_set = True
-            elif 'TextureID' in token:
-                frame_count = int(values[0].split(' ')[0])
+            elif "TextureID" in token:
+                frame_count = int(values[0].split(" ")[0])
                 layer.texture_id_anim = self.parse_animation(token, frame_count)
-            elif token == 'TVertexAnimId':
+            elif token == "TVertexAnimId":
                 layer.texture_anim_id = int(values[0])
-            elif token == 'Alpha':
-                frame_count = int(values[0].split(' ')[0])
+            elif token == "Alpha":
+                frame_count = int(values[0].split(" ")[0])
                 layer.alpha_anim = self.parse_animation(token, frame_count)
-            elif token == 'static':
-                token, *values = values[0].split(' ', 1)
-                if token == 'Alpha':
+            elif token == "static":
+                token, *values = values[0].split(" ", 1)
+                if token == "Alpha":
                     layer.alpha_value = float(values[0])
-                if token == 'TextureID':
+                if token == "TextureID":
                     layer.texture_id = int(values[0])
 
         material.layers.append(layer)
-
 
     def parse_materials(self, count):
         print("Parsing %d materials" % count)
@@ -567,30 +565,29 @@ class MDLParser:
             self.readline()
             base_scope = self.scope
             while self.scope >= base_scope:
-                token, *values = self.readline().split(' ', 1)
-                if token == 'ConstantColor':
+                token, *values = self.readline().split(" ", 1)
+                if token == "ConstantColor":
                     material.use_const_color = True
-                elif token == 'SortPrimsFarZ':
+                elif token == "SortPrimsFarZ":
                     pass
-                elif token == 'FullResolution':
+                elif token == "FullResolution":
                     pass
-                elif token == 'PriorityPlane':
+                elif token == "PriorityPlane":
                     material.priority_plane = int(values[0])
-                elif token == 'Layer':
+                elif token == "Layer":
                     self.parse_material_layer(material)
 
             self.model.materials.append(material)
 
-
     def parse_sequences(self, count):
         print("Parsing %d sequences" % count)
         for i in range(count):
-            token, *values = self.readline().rstrip(' {').split(' ', 1)
+            token, *values = self.readline().rstrip(" {").split(" ", 1)
             name = values[0].strip('"')
 
-            print ("Parsing sequence %s" % name)
+            print("Parsing sequence %s" % name)
 
-            interval = parse_vector(self.readline().split(' ', 1)[1], True)
+            interval = parse_vector(self.readline().split(" ", 1)[1], True)
             non_looping = False
             rarity = 0
             movement_speed = 0
@@ -598,12 +595,12 @@ class MDLParser:
             base_scope = self.scope
 
             while self.scope >= base_scope:
-                token, *values = self.readline().split(' ', 1)
-                if token == 'NonLooping':
+                token, *values = self.readline().split(" ", 1)
+                if token == "NonLooping":
                     non_looping = True
-                elif token == 'MoveSpeed':
+                elif token == "MoveSpeed":
                     movement_speed = float(values[0])
-                elif token == 'Rarity':
+                elif token == "Rarity":
                     rarity = float(values[0])
 
             sequence = War3AnimationSequence(name, interval[0], interval[1], non_looping, movement_speed)
@@ -614,31 +611,30 @@ class MDLParser:
     def parse_global_sequences(self, count):
         print("Parsing global sequences")
         for i in range(count):
-            token, *values = self.readline().split(' ', 1)
-            if token == 'Duration':
+            token, *values = self.readline().split(" ", 1)
+            if token == "Duration":
                 self.model.global_seqs.add(int(values[0]))
 
     def parse_texture_anims(self, count):
         for i in range(count):
-            self.readline() # Enter scope
+            self.readline()  # Enter scope
             base_scope = self.scope
 
             uv_anim = War3TextureAnim()
 
             while self.scope >= base_scope:
-                token, *values = self.readline().split(' ', 1)
+                token, *values = self.readline().split(" ", 1)
                 if token == "Translation":
-                    frame_count = int(values[0].split(' ')[0])
+                    frame_count = int(values[0].split(" ")[0])
                     uv_anim.translation = self.parse_animation(token, frame_count)
                 elif token == "Rotation":
-                    frame_count = int(values[0].split(' ')[0])
+                    frame_count = int(values[0].split(" ")[0])
                     uv_anim.rotation = self.parse_animation(token, frame_count)
                 elif token == "Scale":
-                    frame_count = int(values[0].split(' ')[0])
+                    frame_count = int(values[0].split(" ")[0])
                     uv_anim.scale = self.parse_animation(token, frame_count)
 
             self.model.tvertex_anims.append(uv_anim)
-                    
 
     def parse_token(self, token, data):
         if token == "Version":
@@ -651,53 +647,51 @@ class MDLParser:
         elif token == "GeosetAnim":
             self.parse_geoset_anim()
         elif token == "Textures":
-            self.parse_textures(int(data[0].split(' ')[0]))
+            self.parse_textures(int(data[0].split(" ")[0]))
         elif token == "Materials":
-            self.parse_materials(int(data[0].split(' ')[0]))
+            self.parse_materials(int(data[0].split(" ")[0]))
         elif token == "Sequences":
-            self.parse_sequences(int(data[0].split(' ')[0]))
+            self.parse_sequences(int(data[0].split(" ")[0]))
         elif token == "GlobalSequences":
-            self.parse_global_sequences(int(data[0].split(' ')[0]))
+            self.parse_global_sequences(int(data[0].split(" ")[0]))
         elif token == "TextureAnims":
-            self.parse_texture_anims(int(data[0].split(' ')[0]))
+            self.parse_texture_anims(int(data[0].split(" ")[0]))
         elif token == "PivotPoints":
-            self.parse_pivot_poins(int(data[0].split(' ')[0]))
+            self.parse_pivot_poins(int(data[0].split(" ")[0]))
         elif token == "Bone":
-            self.parse_bone(data[0].rsplit(' ', 1)[0].strip('" '))
+            self.parse_bone(data[0].rsplit(" ", 1)[0].strip('" '))
         elif token == "Helper":
-            self.parse_helper(data[0].rsplit(' ', 1)[0].strip('" '))
+            self.parse_helper(data[0].rsplit(" ", 1)[0].strip('" '))
         elif token == "Light":
-            self.parse_light(data[0].rsplit(' ', 1)[0].strip('" '))
+            self.parse_light(data[0].rsplit(" ", 1)[0].strip('" '))
         elif token == "Attachment":
-            self.parse_attachment(data[0].rsplit(' ', 1)[0].strip('" '))
+            self.parse_attachment(data[0].rsplit(" ", 1)[0].strip('" '))
         elif token == "EventObject":
-            self.parse_event_object(data[0].rsplit(' ', 1)[0].strip('" '))
+            self.parse_event_object(data[0].rsplit(" ", 1)[0].strip('" '))
         elif token == "Camera":
-            self.parse_camera(data[0].rsplit(' ', 1)[0].strip('" '))
+            self.parse_camera(data[0].rsplit(" ", 1)[0].strip('" '))
         elif token == "ParticleEmitter":
-            self.parse_particle_emitter(data[0].rsplit(' ', 1)[0].strip('" '))
+            self.parse_particle_emitter(data[0].rsplit(" ", 1)[0].strip('" '))
         elif token == "ParticleEmitter2":
-            self.parse_particle_emitter_2(data[0].rsplit(' ', 1)[0].strip('" '))
+            self.parse_particle_emitter_2(data[0].rsplit(" ", 1)[0].strip('" '))
         elif token == "RibbonEmitter":
-            self.parse_ribbon_emitter(data[0].rsplit(' ', 1)[0].strip('" '))
+            self.parse_ribbon_emitter(data[0].rsplit(" ", 1)[0].strip('" '))
         elif token == "CollisionShape":
-            self.parse_collision_shape(data[0].rsplit(' ', 1)[0].strip('" '))
+            self.parse_collision_shape(data[0].rsplit(" ", 1)[0].strip('" '))
 
     def parse(self, model):
         self.model = model
         line = self.readline()
 
-        while (line):
+        while line:
             if line.startswith("//"):
                 # Ignore comments
                 line = self.readline()
                 continue
 
-            token, *values = line.split(' ', 1)
+            token, *values = line.split(" ", 1)
             self.parse_token(token, values)
             line = self.readline()
-
-
 
 
 def load(operator, context, settings, filepath=""):
@@ -709,7 +703,3 @@ def load(operator, context, settings, filepath=""):
     parser.parse(model)
     print("Converting to scene...")
     model.to_scene(context, settings.global_matrix, os.path.dirname(filepath))
-    
-
-
-

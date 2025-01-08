@@ -29,7 +29,7 @@ import bpy
 class MDLWriter:
     def __init__(self, path):
         self.indentation = 0
-        self.file = open(path, 'w')
+        self.file = open(path, "w")
 
     def __del__(self):
         self.file.close()
@@ -54,7 +54,7 @@ class MDLWriter:
 
 
 def write_billboard(writer, billboarded, billboard_lock):
-    for flag, axis in zip(billboard_lock, ('Z', 'Y', 'X')):
+    for flag, axis in zip(billboard_lock, ("Z", "Y", "X")):
         if flag:
             writer.write("BillboardedLock%s" % axis)
     if billboarded:
@@ -84,28 +84,28 @@ def save(operator, context, settings, filepath="", mdl_version=800):
     writer.end_scope()
 
     # HEADER
-    writer.begin_scope("Model", '"%s"' % model.name)
+    writer.begin_scope("Model", f'"{model.name}"')
     if len(model.geosets):
-        writer.write("NumGeosets %d" % len(model.geosets))
-    if len(model.objects['bone']):
-        writer.write("NumBones %d" % len(model.objects['bone']))
-    if len(model.objects['attachment']):
-        writer.write("NumAttachments %d" % len(model.objects['attachment']))
-    if len(model.objects['particle']):
-        writer.write("NumParticleEmitters %d" % len(model.objects['particle']))
-    if len(model.objects['particle2']):
-        writer.write("NumParticleEmitters2 %d" % len(model.objects['particle2']))
-    if len(model.objects['ribbon']):
-        writer.write("NumRibbonEmitters %d" % len(model.objects['ribbon']))
-    if len(model.objects['eventobject']):
-        writer.write("NumEvents %d" % len(model.objects['eventobject']))
+        writer.write("NumGeosets {}".format(len(model.geosets)))
+    if len(model.objects["bone"]):
+        writer.write("NumBones {}".format(len(model.objects["bone"])))
+    if len(model.objects["attachment"]):
+        writer.write("NumAttachments {}".format(len(model.objects["attachment"])))
+    if len(model.objects["particle"]):
+        writer.write("NumParticleEmitters {}".format(len(model.objects["particle"])))
+    if len(model.objects["particle2"]):
+        writer.write("NumParticleEmitters2 {}".format(len(model.objects["particle2"])))
+    if len(model.objects["ribbon"]):
+        writer.write("NumRibbonEmitters {}".format(len(model.objects["ribbon"])))
+    if len(model.objects["eventobject"]):
+        writer.write("NumEvents {}".format(len(model.objects["eventobject"])))
     if len(model.geoset_anims):
-        writer.write("NumGeosetAnims %d" % len(model.geoset_anims))
-    if len(model.objects['light']):
-        writer.write("NumLights %d" % len(model.objects['light']))
-    if len(model.objects['helper']):
-        writer.write("NumHelpers %d" % len(model.objects['helper']))
-    writer.write("BlendTime %d" % 150)
+        writer.write("NumGeosetAnims {}".format(len(model.geoset_anims)))
+    if len(model.objects["light"]):
+        writer.write("NumLights {}".format(len(model.objects["light"])))
+    if len(model.objects["helper"]):
+        writer.write("NumHelpers {}".format(len(model.objects["helper"])))
+    writer.write(f"BlendTime {150}")
     writer.write("MinimumExtent {%s, %s, %s}" % tuple(map(f2s, model.global_extents_min)))
     writer.write("MaximumExtent {%s, %s, %s}" % tuple(map(f2s, model.global_extents_max)))
     writer.write("BoundsRadius %s" % f2s(calc_bounds_radius(model.global_extents_min, model.global_extents_max)))
@@ -119,7 +119,7 @@ def save(operator, context, settings, filepath="", mdl_version=800):
         writer.write("Interval {%d, %d}" % (sequence.start, sequence.end))
         if sequence.non_looping:
             writer.write("NonLooping")
-        if 'walk' in sequence.name.lower():
+        if "walk" in sequence.name.lower():
             writer.write("MoveSpeed %d" % sequence.movement_speed)
 
         writer.write("MinimumExtent {%s, %s, %s}" % tuple(map(f2s, model.global_extents_min)))
@@ -151,7 +151,8 @@ def save(operator, context, settings, filepath="", mdl_version=800):
     if len(textures):
         writer.begin_scope("Textures", f"{len(textures)}")
         for texture in textures:
-            name = texture.name.split('.')[0]
+            print(texture)
+            name = texture.name.split(".")[0]
             if name not in tmp_textures:
                 writer.begin_scope("Bitmap")
                 texture_path = os.path.normpath(settings.texture_path)
@@ -202,7 +203,7 @@ def save(operator, context, settings, filepath="", mdl_version=800):
                     m_ = nodes.get("Texture")
                     if m_ is None:
                         m_ = nodes.get("DiffuseTexture1")
-                    m_ = m_.image.name.split('.')[0]
+                    m_ = m_.image.name.split(".")[0]
                     texture_id = tmp_textures.index(m_)
                     writer.write(f"static TextureID {texture_id}")
                 else:
@@ -276,14 +277,14 @@ def save(operator, context, settings, filepath="", mdl_version=800):
 
             writer.begin_scope("Groups", "%d %d" % (len(geoset.matrices), sum(len(mtrx) for mtrx in geoset.matrices)))
             for matrix in geoset.matrices:
-                writer.write("Matrices {%s}" % ','.join(str(model.object_indices[g]) for g in matrix))
+                writer.write("Matrices {%s}" % ",".join(str(model.object_indices[g]) for g in matrix))
             writer.end_scope()
 
             writer.write("MinimumExtent {%s, %s, %s}" % tuple(map(f2s, geoset.min_extent)))
             writer.write("MaximumExtent {%s, %s, %s}" % tuple(map(f2s, geoset.max_extent)))
             writer.write("BoundsRadius %s" % f2s(calc_bounds_radius(geoset.min_extent, geoset.max_extent)))
 
-            for sequence in model.sequences:
+            for _ in model.sequences:
                 writer.begin_scope("Anim")
 
                 # As of right now, we just use the geoset bounds.
@@ -319,8 +320,8 @@ def save(operator, context, settings, filepath="", mdl_version=800):
             writer.end_scope()
 
     # BONES
-    for bone in model.objects['bone']:
-        name = bone.name.replace('.', '_')
+    for bone in model.objects["bone"]:
+        name = bone.name.replace(".", "_")
         if not name.lower().startswith("bone"):
             name = "Bone_" + name
 
@@ -357,7 +358,7 @@ def save(operator, context, settings, filepath="", mdl_version=800):
         writer.end_scope()
 
     # LIGHTS
-    for light in model.objects['light']:
+    for light in model.objects["light"]:
         writer.begin_scope("Light", "\"%s\"" % light.name)
         if len(model.object_indices) > 1:
             writer.write("ObjectId %d" % model.object_indices[light.name])
@@ -404,8 +405,8 @@ def save(operator, context, settings, filepath="", mdl_version=800):
         writer.end_scope()
 
     # HELPERS
-    for helper in model.objects['helper']:
-        name = helper.name.replace('.', '_')
+    for helper in model.objects["helper"]:
+        name = helper.name.replace(".", "_")
 
         if not name.lower().startswith("bone"):
             name = "Bone_" + name
@@ -432,8 +433,8 @@ def save(operator, context, settings, filepath="", mdl_version=800):
         writer.end_scope()
 
     # ATTACHMENT POINTS
-    if len(model.objects['attachment']):
-        for i, attachment in enumerate(model.objects['attachment']):
+    if len(model.objects["attachment"]):
+        for i, attachment in enumerate(model.objects["attachment"]):
             writer.begin_scope("Attachment", "\"%s\"" % attachment.name)
 
             if len(model.object_indices) > 1:
@@ -459,7 +460,7 @@ def save(operator, context, settings, filepath="", mdl_version=800):
         writer.end_scope()
 
     # MODEL EMITTERS
-    for psys in model.objects['particle']:
+    for psys in model.objects["particle"]:
         writer.begin_scope("ParticleEmitter", "\"%s\"" % psys.name)
         if len(model.object_indices) > 1:
             writer.write("ObjectId %d" % model.object_indices[psys.name])
@@ -508,7 +509,7 @@ def save(operator, context, settings, filepath="", mdl_version=800):
         writer.end_scope()
 
     # PARTICLE EMITTERS
-    for psys in model.objects['particle2']:
+    for psys in model.objects["particle2"]:
         writer.begin_scope("ParticleEmitter2", "\"%s\"" % psys.name)
         if len(model.object_indices) > 1:
             writer.write("ObjectId %d" % model.object_indices[psys.name])
@@ -565,12 +566,12 @@ def save(operator, context, settings, filepath="", mdl_version=800):
             writer.write("static EmissionRate %s" % f2s(rnd(psys.emission_rate)))
 
         # FIXME FIXME FIXME FIXME FIXME: Separate X and Y channels! New animation class won't handle this.
-        if psys.scale_anim is not None and ('scale', 1) in psys.scale_anim.keys():
+        if psys.scale_anim is not None and ("scale", 1) in psys.scale_anim.keys():
             psys.scale_anim.write_mdl("Width", writer, model)
         else:
             writer.write("static Width %s" % f2s(rnd(psys.dimensions[1])))
 
-        if psys.scale_anim is not None and ('scale', 0) in psys.scale_anim.keys():
+        if psys.scale_anim is not None and ("scale", 0) in psys.scale_anim.keys():
             psys.scale_anim.write_mdl("Length", writer, model)
         else:
             writer.write("static Length %s" % f2s(rnd(psys.dimensions[0])))
@@ -607,7 +608,7 @@ def save(operator, context, settings, filepath="", mdl_version=800):
         writer.end_scope()
 
     # RIBBON EMITTERS
-    for psys in model.objects['ribbon']:
+    for psys in model.objects["ribbon"]:
         writer.begin_scope("RibbonEmitter", "\"%s\"" % psys.name)
         if len(model.object_indices) > 1:
             writer.write("ObjectId %d" % model.object_indices[psys.name])
@@ -647,20 +648,20 @@ def save(operator, context, settings, filepath="", mdl_version=800):
         writer.begin_scope("Camera", "\"%s\"" % camera.name)
         writer.write("Position {%s, %s, %s}" % tuple(map(f2s, camera.pivot)))
         writer.write("FieldOfView %f" % camera.field_of_view)
-        writer.write("FarClip %f" % (camera.far_clip))
-        writer.write("NearClip %f" % (camera.near_clip))
+        writer.write("FarClip %f" % camera.far_clip)
+        writer.write("NearClip %f" % camera.near_clip)
         writer.begin_scope("Target")
         writer.write("Position {%s, %s, %s}" % tuple(map(f2s, camera.target)))
         writer.end_scope()
         writer.end_scope()
 
     # EVENT OBJECTS
-    for event in model.objects['eventobject']:
-        writer.begin_scope("EventObject", "\"%s\"" % event.name)
+    for event in model.objects["eventobject"]:
+        writer.begin_scope("EventObject", f'"{event.name}"')
         if len(model.object_indices) > 1:
-            writer.write("ObjectId %d" % model.object_indices[event.name])
+            writer.write("ObjectId {}".format(model.object_indices[event.name]))
         if event.parent is not None:
-            writer.write("Parent %d" % model.object_indices[event.parent])
+            writer.write("Parent {}".format(model.object_indices[event.parent]))
         eventtrack = event.track
         if eventtrack is not None:
             eventtrack.write_mdl("EventTrack", writer, model)
@@ -668,27 +669,27 @@ def save(operator, context, settings, filepath="", mdl_version=800):
         writer.end_scope()
 
     # COLLISION SHAPES
-    for collider in model.objects['collisionshape']:
-        writer.begin_scope("CollisionShape", "\"%s\"" % collider.name)
-        writer.write("ObjectId %d" % model.object_indices[collider.name])
+    for collider in model.objects["collisionshape"]:
+        writer.begin_scope("CollisionShape", f'"{collider.name}"')
+        writer.write("ObjectId {}".format(model.object_indices[collider.name]))
         if collider.parent is not None:
-            writer.write("Parent %d" % model.object_indices[collider.parent])
-        if collider.type == 'Box':
+            writer.write("Parent {}".format(model.object_indices[collider.parent]))
+        if collider.type == "Box":
             writer.write("Box")
         else:
             writer.write("Sphere")
 
-        writer.begin_scope("Vertices", "%d" % len(collider.verts))
+        writer.begin_scope("Vertices", "{}".format(len(collider.verts)))
         for vert in collider.verts:
             writer.write("{%s, %s, %s}" % tuple(f2s(rnd(x)) for x in vert))
         writer.end_scope()
-        if collider.type == 'Sphere':
-            writer.write("BoundsRadius %s" % f2s(rnd(collider.radius)))
+        if collider.type == "Sphere":
+            writer.write("BoundsRadius {}".format(f2s(rnd(collider.radius))))
         writer.end_scope()
 
 
 # ONLY TESTS
-if __name__ == '__main__':
+if __name__ == "__main__":
     from export_mdl.classes.War3ExportSettings import War3ExportSettings
     from bpy_extras.io_utils import axis_conversion
     from mathutils import Matrix
